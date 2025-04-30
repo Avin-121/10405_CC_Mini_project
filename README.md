@@ -239,3 +239,6 @@ Pull requests are welcome. For major changes, open an issue first to discuss wha
 Avin Dabre  
 📧 Email: avindabre16@gmail.com  
 🌍 Project URL: [Hosted S3 Website](http://bucket10405cc.s3-website-us-east-1.amazonaws.com/))  
+
+NOTE-All Services are deleted except the S3 bUCKET WHERE SITE IS HOSTED
+
