@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart To-Do List</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 30px;
+            animation: slideDown 1s ease-in-out;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 10px;
+            animation: bounceIn 1s ease;
+        }
+
+        input, button {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        li {
+            background: #fff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            animation: fadeInUp 0.5s ease forwards;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li span {
+            flex-grow: 1;
+        }
+
+        li button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        li button:hover {
+            background-color: #d32f2f;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>📝 Smart To-Do List</h1>
+    <form id="taskForm">
+        <input type="text" id="task" placeholder="Enter Task" required>
+        <input type="datetime-local" id="deadline" required>
+        <button type="submit">Add Task</button>
+    </form>
+    <ul id="taskList"></ul>
+
+    <script>
+        const apiUrl = 'https://dhblngw5nh.execute-api.us-east-1.amazonaws.com';
+        const taskListElement = document.getElementById('taskList');
+        const taskForm = document.getElementById('taskForm');
+
+        async function fetchTasks() {
+            try {
+                const response = await fetch(apiUrl + '/tasks'); // Assuming you'll create a GET endpoint for this
+                if (response.ok) {
+                    const tasks = await response.json();
+                    displayTasks(tasks);
+                } else {
+                    console.error('Failed to fetch tasks:', response.status);
+                    alert('Failed to load tasks.');
+                }
+            } catch (error) {
+                console.error('Network error fetching tasks:', error);
+                alert('Network error loading tasks.');
+            }
+        }
+
+        function displayTasks(tasks) {
+            taskListElement.innerHTML = ''; // Clear existing list
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                const taskSpan = document.createElement('span');
+                taskSpan.textContent = `${task.task_name} - ${new Date(task.deadline).toLocaleString()}`;
+                li.appendChild(taskSpan);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                // Add event listener for deleting tasks later
+                li.appendChild(deleteButton);
+                taskListElement.appendChild(li);
+            });
+        }
+
+        taskForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const taskInput = document.getElementById('task');
+            const deadlineInput = document.getElementById('deadline');
+            const taskName = taskInput.value;
+            const deadline = deadlineInput.value;
+            const email = 'user@example.com'; // Replace with actual user email if you implement authentication
+
+            try {
+                const response = await fetch(apiUrl + '/tasks', {
+                    method: 'POST',
+                    body: JSON.stringify({ task_name: taskName, deadline, email }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const newTask = await response.json(); // Assuming your backend returns the created task
+                    const li = document.createElement('li');
+                    const taskSpan = document.createElement('span');
+                    taskSpan.textContent = `${taskName} - ${new Date(deadline).toLocaleString()}`;
+                    li.appendChild(taskSpan);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    // Add event listener for deleting tasks later
+                    li.appendChild(deleteButton);
+                    taskListElement.appendChild(li);
+                    taskForm.reset();
+                    alert('✅ Task added!');
+                    // Optionally, refresh the task list after adding
+                    // fetchTasks();
+                } else {
+                    const errorData = await response.json(); // Or response.text()
+                    console.error('Error adding task:', errorData);
+                    alert(`❌ Failed to add task: ${response.status} - ${errorData.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                alert('⚠️ Network error occurred. Please try again.');
+            }
+        });
+
+        // Load existing tasks when the page loads (if you implement the GET endpoint)
+        // fetchTasks();
+    </script>
+</body>
+</html>
